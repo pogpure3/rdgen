@@ -138,6 +138,41 @@ jobs:
           repository: rustdesk/rustdesk
           submodules: recursive
 
+      - name: OSS server compat patch (disable hbbs tcp key exchange)
+        shell: bash
+        run: |
+          python3 - <<'PYEOF'
+          import re, pathlib
+          p = pathlib.Path("src/client.rs")
+          lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+          out, patched = [], 0
+          for i, line in enumerate(lines):
+              window = "".join(lines[i:i+4])
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && !token\.is_empty\(\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat: OSS hbbs has no tcp key exchange\n")
+                  patched += 1
+                  continue
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && \(!token\.is_empty\(\) \|\| !switch_code\.is_empty\(\)\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat\n")
+                  patched += 1
+                  continue
+              if "let legacy_secure = " in line:
+                  out.append(re.sub(r"let legacy_secure = [^;]+;", "let legacy_secure = false; // rdgen oss-compat", line))
+                  patched += 1
+                  continue
+              if re.search(r"^\s*crate::secure_tcp\(&mut conn, &key\)\.await\?;", line):
+                  indent = re.match(r"(\s*)", line).group(1)
+                  out.append(indent + "// rdgen oss-compat: OSS hbbs does not implement the exchange\n")
+                  patched += 1
+                  continue
+              out.append(line)
+          p.write_text("".join(out), encoding="utf-8")
+          print("oss-compat patched sites:", patched)
+          assert patched >= 3, "expected >=3 sites, got %d" % patched
+          PYEOF
+
       - name: Apply allow_custom_update patch
         continue-on-error: true
         if: ${{ env.update_public_key != '' }}
@@ -807,6 +842,41 @@ jobs:
           repository: rustdesk/rustdesk
           submodules: recursive
 
+      - name: OSS server compat patch (disable hbbs tcp key exchange)
+        shell: bash
+        run: |
+          python3 - <<'PYEOF'
+          import re, pathlib
+          p = pathlib.Path("src/client.rs")
+          lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+          out, patched = [], 0
+          for i, line in enumerate(lines):
+              window = "".join(lines[i:i+4])
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && !token\.is_empty\(\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat: OSS hbbs has no tcp key exchange\n")
+                  patched += 1
+                  continue
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && \(!token\.is_empty\(\) \|\| !switch_code\.is_empty\(\)\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat\n")
+                  patched += 1
+                  continue
+              if "let legacy_secure = " in line:
+                  out.append(re.sub(r"let legacy_secure = [^;]+;", "let legacy_secure = false; // rdgen oss-compat", line))
+                  patched += 1
+                  continue
+              if re.search(r"^\s*crate::secure_tcp\(&mut conn, &key\)\.await\?;", line):
+                  indent = re.match(r"(\s*)", line).group(1)
+                  out.append(indent + "// rdgen oss-compat: OSS hbbs does not implement the exchange\n")
+                  patched += 1
+                  continue
+              out.append(line)
+          p.write_text("".join(out), encoding="utf-8")
+          print("oss-compat patched sites:", patched)
+          assert patched >= 3, "expected >=3 sites, got %d" % patched
+          PYEOF
+
       - name: Apply allow_custom_update patch
         continue-on-error: true
         if: ${{ env.update_public_key != '' }}
@@ -1316,6 +1386,41 @@ jobs:
           repository: rustdesk/rustdesk
           submodules: recursive
 
+      - name: OSS server compat patch (disable hbbs tcp key exchange)
+        shell: bash
+        run: |
+          python3 - <<'PYEOF'
+          import re, pathlib
+          p = pathlib.Path("src/client.rs")
+          lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+          out, patched = [], 0
+          for i, line in enumerate(lines):
+              window = "".join(lines[i:i+4])
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && !token\.is_empty\(\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat: OSS hbbs has no tcp key exchange\n")
+                  patched += 1
+                  continue
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && \(!token\.is_empty\(\) \|\| !switch_code\.is_empty\(\)\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat\n")
+                  patched += 1
+                  continue
+              if "let legacy_secure = " in line:
+                  out.append(re.sub(r"let legacy_secure = [^;]+;", "let legacy_secure = false; // rdgen oss-compat", line))
+                  patched += 1
+                  continue
+              if re.search(r"^\s*crate::secure_tcp\(&mut conn, &key\)\.await\?;", line):
+                  indent = re.match(r"(\s*)", line).group(1)
+                  out.append(indent + "// rdgen oss-compat: OSS hbbs does not implement the exchange\n")
+                  patched += 1
+                  continue
+              out.append(line)
+          p.write_text("".join(out), encoding="utf-8")
+          print("oss-compat patched sites:", patched)
+          assert patched >= 3, "expected >=3 sites, got %d" % patched
+          PYEOF
+
       - name: Apply allow_custom_update patch
         continue-on-error: true
         if: ${{ env.update_public_key != '' }}
@@ -1482,6 +1587,41 @@ jobs:
         with:
           repository: rustdesk/rustdesk
           submodules: recursive
+
+      - name: OSS server compat patch (disable hbbs tcp key exchange)
+        shell: bash
+        run: |
+          python3 - <<'PYEOF'
+          import re, pathlib
+          p = pathlib.Path("src/client.rs")
+          lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+          out, patched = [], 0
+          for i, line in enumerate(lines):
+              window = "".join(lines[i:i+4])
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && !token\.is_empty\(\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat: OSS hbbs has no tcp key exchange\n")
+                  patched += 1
+                  continue
+              m = re.match(r"^(\s*)if !key\.is_empty\(\) && \(!token\.is_empty\(\) \|\| !switch_code\.is_empty\(\)\) \{", line)
+              if m and "secure_tcp(" in window:
+                  out.append(m.group(1) + "if false { // rdgen oss-compat\n")
+                  patched += 1
+                  continue
+              if "let legacy_secure = " in line:
+                  out.append(re.sub(r"let legacy_secure = [^;]+;", "let legacy_secure = false; // rdgen oss-compat", line))
+                  patched += 1
+                  continue
+              if re.search(r"^\s*crate::secure_tcp\(&mut conn, &key\)\.await\?;", line):
+                  indent = re.match(r"(\s*)", line).group(1)
+                  out.append(indent + "// rdgen oss-compat: OSS hbbs does not implement the exchange\n")
+                  patched += 1
+                  continue
+              out.append(line)
+          p.write_text("".join(out), encoding="utf-8")
+          print("oss-compat patched sites:", patched)
+          assert patched >= 3, "expected >=3 sites, got %d" % patched
+          PYEOF
 
       - name: Apply allow_custom_update patch
         continue-on-error: true
