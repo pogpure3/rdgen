@@ -419,6 +419,14 @@ jobs:
         with:
           prefix-key: ${{ matrix.job.os }}
 
+      - name: Select vcpkg commit for rustdesk version
+        shell: bash
+        run: |
+          # rustdesk 1.4.6 CI pins vcpkg 120deac; older pin 9e593bb breaks its windows build
+          if [[ "$VERSION" == "1.4.6" ]]; then
+            echo "VCPKG_COMMIT_ID=120deac3062162151622ca4860575a33844ba10b" >> $GITHUB_ENV
+          fi
+
       - name: Setup vcpkg with Github Actions binary cache
         uses: lukka/run-vcpkg@v11
         with:
